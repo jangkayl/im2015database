@@ -9,10 +9,6 @@ import { users } from "./db/schema";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 
 export const config = {
-	pages: {
-		signIn: "/sign-in",
-		error: "/sign-in",
-	},
 	session: {
 		strategy: "jwt",
 		maxAge: 30 * 24 * 60 * 60,
