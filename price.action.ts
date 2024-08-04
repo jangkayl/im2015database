@@ -6,6 +6,8 @@ import { desc, notInArray } from "drizzle-orm";
 
 // Track if the cron job is initialized
 let isCronJobInitialized = false;
+// Store the interval ID
+let cronJobIntervalId: any = null;
 
 // ADD PRIZES ASYNC
 export const addPrizeWithRandomNumber = async () => {
@@ -89,14 +91,26 @@ export const startCronJob = () => {
 	// Set up the job to run every minute
 	const interval = 60000; // 60,000 milliseconds (1 minute)
 
-	setTimeout(async () => {
-		await job(); // Run immediately after the initial delay
-		setInterval(async () => {
+	setTimeout(() => {
+		setTimeout(async () => {
 			await job();
-		}, interval);
+			cronJobIntervalId = setInterval(async () => {
+				await job();
+			}, interval);
+		}, 1000); // 1-second delay before calling job()
 	}, getDelayToNextMinute());
 
 	console.log("Cron job scheduled to start.");
 };
 
-// Start the cron job
+// Function to stop the cron job
+export const stopCronJob = () => {
+	if (cronJobIntervalId) {
+		clearInterval(cronJobIntervalId);
+		isCronJobInitialized = false;
+		cronJobIntervalId = null;
+		console.log("Cron job stopped.");
+	} else {
+		console.log("Cron job is not running.");
+	}
+};
