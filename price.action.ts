@@ -7,7 +7,13 @@ import { desc, notInArray } from "drizzle-orm";
 // Track if the cron job is initialized
 let isCronJobInitialized = false;
 // Store the interval ID
-let cronJobIntervalId: any = null;
+let cronJobIntervalId: NodeJS.Timeout | null = null;
+// Store the timeout ID for initial delay
+let initialTimeoutId: NodeJS.Timeout | null = null;
+// Flag to control stopping the job
+let stopJob = false;
+// Promise to track the current job's completion
+let currentJobPromise: Promise<void> | null = null;
 
 // ADD PRIZES ASYNC
 export const addPrizeWithRandomNumber = async () => {
@@ -69,9 +75,12 @@ function getDelayToNextMinute(): number {
 
 // Cron job function
 const job = async () => {
+	if (stopJob) return; // Exit if stop flag is set
+
 	try {
 		console.log("Cron job started at", new Date().toISOString());
 		await addPrizeWithRandomNumber();
+		if (stopJob) return; // Check stop flag after async operation
 		await deleteExcessRecords();
 		console.log("Cron job completed at", new Date().toISOString());
 	} catch (error) {
@@ -87,17 +96,29 @@ export const startCronJob = () => {
 	}
 
 	isCronJobInitialized = true;
+	stopJob = false;
 
 	// Set up the job to run every minute
 	const interval = 60000; // 60,000 milliseconds (1 minute)
 
-	setTimeout(() => {
-		setTimeout(async () => {
-			await job();
-			cronJobIntervalId = setInterval(async () => {
-				await job();
-			}, interval);
-		}, 1000); // 1-second delay before calling job()
+	initialTimeoutId = setTimeout(async () => {
+		if (stopJob) return; // Exit if stop flag is set before starting the initial job
+
+		await job(); // Execute the initial job
+		if (stopJob) return; // Check stop flag after initial job execution
+
+		cronJobIntervalId = setInterval(async () => {
+			if (stopJob) {
+				clearInterval(cronJobIntervalId as any);
+				cronJobIntervalId = null;
+				return;
+			}
+
+			// Wait for the current job to finish before starting a new one
+			if (currentJobPromise) await currentJobPromise;
+			currentJobPromise = job();
+			await currentJobPromise;
+		}, interval);
 	}, getDelayToNextMinute());
 
 	console.log("Cron job scheduled to start.");
@@ -105,12 +126,27 @@ export const startCronJob = () => {
 
 // Function to stop the cron job
 export const stopCronJob = () => {
+	stopJob = true;
+
+	// Clear the interval and timeout if they exist
 	if (cronJobIntervalId) {
 		clearInterval(cronJobIntervalId);
-		isCronJobInitialized = false;
 		cronJobIntervalId = null;
-		console.log("Cron job stopped.");
-	} else {
-		console.log("Cron job is not running.");
 	}
+
+	if (initialTimeoutId) {
+		clearTimeout(initialTimeoutId);
+		initialTimeoutId = null;
+	}
+
+	// Wait for any ongoing job to complete
+	if (currentJobPromise) {
+		currentJobPromise.finally(() => {
+			console.log("Cron job stopped.");
+		});
+	} else {
+		console.log("Cron job stopped.");
+	}
+
+	isCronJobInitialized = false;
 };
