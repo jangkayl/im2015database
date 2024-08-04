@@ -150,5 +150,3 @@ export const stopCronJob = () => {
 
 	isCronJobInitialized = false;
 };
-
-startCronJob();
