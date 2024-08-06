@@ -17,8 +17,17 @@ let currentJobPromise: Promise<void> | null = null;
 
 // ADD PRIZES ASYNC
 export const addPrizeWithRandomNumber = async () => {
-	const random_number = randomInt(randomInt(1, 81), randomInt(1, 81));
-	const number = random_number;
+	const randomIn = randomInt(1, 81);
+	const random_number = randomInt(1, 81);
+	let random = null;
+
+	if (randomIn > random_number) {
+		random = randomInt(random_number, randomIn);
+	} else {
+		random = randomInt(randomIn, random_number);
+	}
+
+	const number = random;
 	const result_value = random_number % 2 === 0 ? 0 : 1;
 	const result =
 		random_number % 2 === 0 ? `Even&${random_number}` : `Odd&${random_number}`;
