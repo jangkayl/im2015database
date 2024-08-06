@@ -17,7 +17,7 @@ let currentJobPromise: Promise<void> | null = null;
 
 // ADD PRIZES ASYNC
 export const addPrizeWithRandomNumber = async () => {
-	const random_number = randomInt(1, 101);
+	const random_number = randomInt(randomInt(1, 81), randomInt(1, 81));
 	const number = random_number;
 	const result_value = random_number % 2 === 0 ? 0 : 1;
 	const result =
