@@ -4,15 +4,10 @@ import db from "./db/drizzle";
 import { prizes } from "./db/schema";
 import { desc, notInArray } from "drizzle-orm";
 
-// Track if the cron job is initialized
 let isCronJobInitialized = false;
-// Store the interval ID
 let cronJobIntervalId: NodeJS.Timeout | null = null;
-// Store the timeout ID for initial delay
 let initialTimeoutId: NodeJS.Timeout | null = null;
-// Flag to control stopping the job
 let stopJob = false;
-// Promise to track the current job's completion
 let currentJobPromise: Promise<void> | null = null;
 
 // ADD PRIZES ASYNC
@@ -29,8 +24,7 @@ export const addPrizeWithRandomNumber = async () => {
 
 	const number = random;
 	const result_value = random_number % 2 === 0 ? 0 : 1;
-	const result =
-		random_number % 2 === 0 ? `Even&${random_number}` : `Odd&${random_number}`;
+	const result = random_number % 2 === 0 ? `Even&${number}` : `Odd&${number}`;
 
 	try {
 		console.log("Inserting prize:", { number, result_value, result });
